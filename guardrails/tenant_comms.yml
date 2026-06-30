@@ -1,0 +1,17 @@
+guardrails:
+  - id: tenant_communication
+    description: Professional tone, never share confidential info
+    trigger: agent_action in ["send_tenant_sms", "send_tenant_email"]
+    pre_check:
+      - content must not contain owner financial information
+      - content must not contain vendor cost details
+      - content must not contain emergency severity
+      - content must include ETA when available
+      - content must include ticket reference number
+      - content must use professional, empathetic tone
+    allowed_info:
+      - ticket_status
+      - vendor_eta
+      - vendor_name
+      - next_update_time
+      - emergency_instructions

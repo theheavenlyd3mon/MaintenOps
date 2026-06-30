@@ -1,0 +1,17 @@
+guardrails:
+  - id: spending_authorization
+    description: Never approve repairs above owner-authorized limit without approval
+    trigger: agent_action == "approve_quote"
+    pre_check:
+      - if quote.total <= owner.maintenance_limit: auto-approve
+      - if quote.total > owner.maintenance_limit AND <= owner.maintenance_limit * 1.5:
+          require owner approval via SMS/email
+      - if quote.total > owner.maintenance_limit * 1.5:
+          require owner approval + property manager review
+      - if quote.total > $2,500: always require 3 quotes compared
+    emergency_override:
+      - if issue.category == "emergency" AND habitability_risk == "immediate":
+          override up to $5,000 with post-approval notification
+    on_failure:
+      - block payment
+      - notify owner with quote details

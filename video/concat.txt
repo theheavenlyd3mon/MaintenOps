@@ -1,0 +1,6 @@
+file 'media/videos/script/1080p60/Scene1_TheProblem.mp4'
+file 'media/videos/script/1080p60/Scene2_TenantReports.mp4'
+file 'media/videos/script/1080p60/Scene3_AITriage.mp4'
+file 'media/videos/script/1080p60/Scene4_VendorMatching.mp4'
+file 'media/videos/script/1080p60/Scene5_PaymentWarranty.mp4'
+file 'media/videos/script/1080p60/Scene6_TheResult.mp4'

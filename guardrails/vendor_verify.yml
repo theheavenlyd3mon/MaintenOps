@@ -1,0 +1,16 @@
+guardrails:
+  - id: vendor_license_check
+    description: Never dispatch unlicensed or uninsured vendors
+    trigger: agent_action == "dispatch_vendor"
+    pre_check:
+      - verify vendor.license_active == true
+      - verify vendor.license_type matches required_trade
+      - verify vendor.license_state == property.state
+      - verify vendor.insurance_active == true
+      - verify vendor.insurance_coverage >= $1,000,000
+      - verify vendor.workers_comp_active == true
+    on_failure:
+      - block dispatch
+      - log: "LICENSE_BLOCK: Vendor {vendor_id} failed verification for {reason}"
+      - notify: property_manager
+      - escalate if no alternative vendor available within SLA

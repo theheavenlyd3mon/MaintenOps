@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaintenOps — Property Maintenance Agent</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a28;
+    --border: #2a2a3e;
+    --text: #e4e4ed;
+    --text-dim: #8888a0;
+    --accent: #6c5ce7;
+    --accent-glow: rgba(108,92,231,0.15);
+    --green: #00d68f;
+    --green-dim: rgba(0,214,143,0.1);
+    --red: #ff6b6b;
+    --yellow: #ffd93d;
+    --blue: #5dade2;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    max-width: 820px;
+    padding: 32px 24px 0;
+    text-align: center;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header p {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  /* ── Main Layout ── */
+  .container {
+    width: 100%;
+    max-width: 820px;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 720px) {
+    .container { grid-template-columns: 1fr; }
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Form ── */
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  /* ── Quick Actions ── */
+  .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .quick-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .quick-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--accent-glow);
+  }
+
+  /* ── Submit Button ── */
+  .btn-submit {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  .btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ── Results Panel ── */
+  .results { min-height: 400px; }
+  .results .placeholder {
+    color: var(--text-dim);
+    font-size: 14px;
+    text-align: center;
+    padding: 60px 20px;
+    line-height: 1.6;
+  }
+  .results .placeholder .icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* ── Pipeline Timeline ── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .phase {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 10px 0;
+    opacity: 0.3;
+    transition: all 0.4s ease;
+  }
+  .phase.active { opacity: 1; }
+  .phase.done { opacity: 0.8; }
+  .phase.failed { opacity: 1; }
+  .phase.failed .phase-status { color: var(--red); }
+
+  .phase-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .phase.active .phase-indicator {
+    border-color: var(--yellow);
+    animation: pulse 1.2s infinite;
+  }
+  .phase.done .phase-indicator {
+    border-color: var(--green);
+    background: var(--green-dim);
+  }
+  .phase.failed .phase-indicator {
+    border-color: var(--red);
+    background: rgba(255,107,107,0.1);
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,217,61,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(255,217,61,0); }
+  }
+
+  .phase-content { flex: 1; min-width: 0; }
+  .phase-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .phase-detail {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .phase .phase-check { display: none; }
+  .phase.done .phase-check { display: inline; color: var(--green); }
+  .phase.failed .phase-cross { display: inline; color: var(--red); }
+
+  /* ── Summary ── */
+  .summary-card {
+    margin-top: 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    display: none;
+  }
+  .summary-card.visible { display: block; animation: fadeUp 0.5s ease; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .summary-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--green);
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-label { color: var(--text-dim); }
+  .summary-value { font-weight: 500; }
+
+  /* ── Status Badge ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-emergency { background: rgba(255,107,107,0.15); color: var(--red); }
+  .badge-urgent { background: rgba(255,217,61,0.15); color: var(--yellow); }
+  .badge-routine { background: rgba(0,214,143,0.15); color: var(--green); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⌘ MaintenOps</h1>
+  <p>AI-native property maintenance agent — report an issue, and we handle the rest</p>
+</header>
+
+<div class="container">
+
+  <!-- Left: Form -->
+  <div class="card">
+    <h2>📋 Report an Issue</h2>
+
+    <div class="quick-actions">
+      <button class="quick-btn" onclick="fillDemo('123 Main St', '3B', 'AC not cooling at all, 87 degrees inside. We have a newborn in the apartment.')">🔥 AC + Newborn</button>
+      <button class="quick-btn" onclick="fillDemo('123 Main St', '3B', 'I smell gas in the kitchen near the stove.')">⚠️ Gas Leak</button>
+      <button class="quick-btn" onclick="fillDemo('456 Oak Ave', '12', 'Garbage disposal is humming but not spinning. Sink drains fine.')">🔧 Disposal</button>
+    </div>
+
+    <form id="issueForm">
+      <div class="form-group">
+        <label for="address">Property Address</label>
+        <input type="text" id="address" name="address" placeholder="e.g. 123 Main St" required>
+      </div>
+      <div class="form-group">
+        <label for="unit">Unit / Apt</label>
+        <input type="text" id="unit" name="unit" placeholder="e.g. 3B, Apt 12">
+      </div>
+      <div class="form-group">
+        <label for="issue">Describe the Issue</label>
+        <textarea id="issue" name="issue" placeholder="What's wrong? Be as specific as you can..." required></textarea>
+      </div>
+      <div class="form-group">
+        <label for="notes">Additional Notes (optional)</label>
+        <textarea id="notes" name="notes" placeholder="e.g. I work from home, best times to visit: after 2pm"></textarea>
+      </div>
+      <button type="submit" class="btn-submit" id="submitBtn">🚀 Submit Report</button>
+    </form>
+  </div>
+
+  <!-- Right: Results -->
+  <div class="card results" id="resultsPanel">
+    <h2>📡 Agent Status</h2>
+    <div class="placeholder" id="placeholder">
+      <div class="icon">🏗️</div>
+      Submit a maintenance report to see the MaintenOps agent in action.<br>
+      <span style="font-size:12px;color:#666;">Triage → Vendors → Quotes → Guardrails → Dispatch → Payment → Warranty</span>
+    </div>
+    <div class="timeline" id="timeline" style="display:none;"></div>
+    <div class="summary-card" id="summaryCard"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Demo Fillers ──
+function fillDemo(addr, unit, issue) {
+  document.getElementById('address').value = addr;
+  document.getElementById('unit').value = unit;
+  document.getElementById('issue').value = issue;
+}
+
+// ── Phase Definitions ──
+const PHASES = [
+  { id: 'triage',          icon: '🧠', label: 'Triage',          detail: '' },
+  { id: 'habitability',    icon: '⏰', label: 'Habitability',    detail: '' },
+  { id: 'vendor_match',    icon: '🔧', label: 'Vendor Matching', detail: '' },
+  { id: 'quote_sim',       icon: '💰', label: 'Quote Simulation',detail: '' },
+  { id: 'quote_compare',   icon: '📊', label: 'Quote Comparison',detail: '' },
+  { id: 'guardrails',      icon: '🛡️', label: 'NemoClaw Guards', detail: '' },
+  { id: 'dispatch',        icon: '🚚', label: 'Dispatch',        detail: '' },
+  { id: 'work_complete',   icon: '✅', label: 'Work Complete',   detail: '' },
+  { id: 'payment',         icon: '💳', label: 'Payment',         detail: '' },
+  { id: 'warranty',        icon: '📄', label: 'Warranty Claim',  detail: '' },
+];
+
+function buildTimeline() {
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  PHASES.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'phase';
+    el.id = `phase-${p.id}`;
+    el.innerHTML = `
+      <div class="phase-indicator">${p.icon}</div>
+      <div class="phase-content">
+        <div class="phase-title">
+          <span class="phase-check">✓</span>
+          <span class="phase-cross" style="display:none;">✗</span>
+          ${p.label}
+        </div>
+        <div class="phase-detail" id="detail-${p.id}">${p.detail}</div>
+      </div>
+    `;
+    tl.appendChild(el);
+  });
+}
+
+function setPhaseActive(id) {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById(`phase-${id}`);
+  if (el) el.classList.add('active');
+}
+
+function setPhaseDone(id, detail) {
+  const el = document.getElementById(`phase-${id}`);
+  if (el) {
+    el.classList.remove('active');
+    el.classList.add('done');
+    if (detail) document.getElementById(`detail-${id}`).textContent = detail;
+  }
+}
+
+function setPhaseFailed(id, detail) {
+  const el = document.getElementById(`phase-${id}`);
+  if (el) {
+    el.classList.remove('active');
+    el.classList.add('failed');
+    if (detail) document.getElementById(`detail-${id}`).textContent = '❌ ' + detail;
+  }
+}
+
+function showSummary(data) {
+  const card = document.getElementById('summaryCard');
+  const p = data.phases || {};
+  const triage = p.triage || {};
+  const payment = p.payment || {};
+  const warranty = p.warranty || {};
+  const dispatch = p.dispatch || {};
+  const guardrails = p.guardrails || {};
+  const comparison = p.quote_comparison || {};
+  const rec = comparison.recommendation || {};
+  const hab = p.habitability || {};
+
+  const badgeCls = triage.urgency === 'emergency' ? 'emergency' : triage.urgency === 'urgent' ? 'urgent' : 'routine';
+
+  card.innerHTML = `
+    <h3>✅ Pipeline Complete</h3>
+    <div class="summary-row">
+      <span class="summary-label">Status</span>
+      <span class="summary-value badge badge-${badgeCls}">${(triage.urgency || 'N/A').toUpperCase()}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Issue</span>
+      <span class="summary-value">${triage.trade_needed || 'N/A'}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Habitability</span>
+      <span class="summary-value">${hab.applicable ? hab.deadline_hours + 'h deadline in ' + hab.state : 'N/A'}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Vendor</span>
+      <span class="summary-value">${rec.vendor_name || 'N/A'} — $${(rec.quote_amount || 0).toFixed(2)}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Guardrails</span>
+      <span class="summary-value">${guardrails.passed ? '✅ Passed' : '❌ Blocked'}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Dispatch</span>
+      <span class="summary-value">${dispatch.eta || 'N/A'}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Vendor Paid</span>
+      <span class="summary-value">$${(payment.vendor_payout || 0).toFixed(2)}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Commission</span>
+      <span class="summary-value" style="color:var(--green);">+$${(payment.commission_amount || 0).toFixed(2)}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Warranty</span>
+      <span class="summary-value">${warranty.claim_generated ? '✅ Claim filed' : warranty.reason || 'N/A'}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Time</span>
+      <span class="summary-value">${(data.elapsed_seconds || 0).toFixed(1)}s</span>
+    </div>
+  `;
+  card.classList.add('visible');
+}
+
+// ── Animate Pipeline ──
+async function animatePipeline(data) {
+  const tl = document.getElementById('timeline');
+  const placeholder = document.getElementById('placeholder');
+  const submitBtn = document.getElementById('submitBtn');
+
+  placeholder.style.display = 'none';
+  tl.style.display = 'block';
+  buildTimeline();
+
+  const p = data.phases || {};
+
+  // Phase 1: Triage
+  setPhaseActive('triage');
+  await sleep(800);
+  const t = p.triage || {};
+  setPhaseDone('triage', `${(t.urgency || 'N/A').toUpperCase()} — ${t.trade_needed || 'N/A'} (source: ${t.source || 'N/A'})`);
+
+  // Phase 2: Habitability
+  setPhaseActive('habitability');
+  await sleep(600);
+  const hab = p.habitability || {};
+  if (hab.applicable) {
+    setPhaseDone('habitability', `${hab.deadline_hours}h deadline in ${hab.state} — ${hab.notes || ''}`);
+  } else {
+    setPhaseDone('habitability', 'Not applicable');
+  }
+
+  // Phase 3: Vendor Match
+  setPhaseActive('vendor_match');
+  await sleep(700);
+  const vm = p.vendor_match || [];
+  const vmNames = vm.slice(0, 3).map(v => `${v.name || '?'} ★${v.rating || '?'}`).join(', ');
+  setPhaseDone('vendor_match', `${vm.length} matched — ${vmNames}`);
+
+  // Phase 4: Quote Simulation
+  setPhaseActive('quote_sim');
+  await sleep(400);
+  const q = p.quotes || [];
+  const qDetails = q.map(qq => `${qq.vendor_name}: $${qq.quote_amount.toFixed(0)}`).join(' / ');
+  setPhaseDone('quote_sim', qDetails);
+
+  // Phase 5: Quote Comparison
+  setPhaseActive('quote_compare');
+  await sleep(600);
+  const cmp = p.quote_comparison || {};
+  const rec = cmp.recommendation || {};
+  setPhaseDone('quote_compare', `Best: ${rec.vendor_name || 'N/A'} at $${(rec.quote_amount || 0).toFixed(2)} — ${(rec.reason || '').slice(0, 80)}`);
+
+  // Phase 6: Guardrails
+  setPhaseActive('guardrails');
+  await sleep(500);
+  const gr = p.guardrails || {};
+  if (gr.passed) {
+    setPhaseDone('guardrails', `✅ All passed — ${(gr.warnings || []).length} warnings`);
+  } else {
+    setPhaseDone('guardrails', `❌ Blocked: ${(gr.blocks || []).join('; ')}`);
+  }
+
+  // Phase 7: Dispatch
+  setPhaseActive('dispatch');
+  await sleep(600);
+  const dp = p.dispatch || {};
+  setPhaseDone('dispatch', `${dp.vendor_name || 'N/A'} — ETA: ${dp.eta || 'N/A'} (Ref: ${dp.dispatch_id || 'N/A'})`);
+
+  // Phase 8: Work Complete
+  setPhaseActive('work_complete');
+  await sleep(500);
+  setPhaseDone('work_complete', `Photo verified — ${(p.work_complete || {}).notes || 'Done'}`);
+
+  // Phase 9: Payment
+  setPhaseActive('payment');
+  await sleep(600);
+  const pm = p.payment || {};
+  setPhaseDone('payment', `$${(pm.vendor_payout || 0).toFixed(2)} to vendor | $${(pm.commission_amount || 0).toFixed(2)} commission earned`);
+
+  // Phase 10: Warranty
+  setPhaseActive('warranty');
+  await sleep(500);
+  const wr = p.warranty || {};
+  if (wr.claim_generated) {
+    const c = wr.claim || {};
+    setPhaseDone('warranty', `Claim filed — ID ${(c.claim_id || '').slice(0, 8)}...`);
+  } else {
+    setPhaseDone('warranty', wr.reason || 'Not processed');
+  }
+
+  // Show summary
+  await sleep(300);
+  showSummary(data);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Form Submit ──
+document.getElementById('issueForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Processing...';
+
+  const data = {
+    address: document.getElementById('address').value,
+    unit: document.getElementById('unit').value,
+    issue: document.getElementById('issue').value,
+    notes: document.getElementById('notes').value,
+  };
+
+  try {
+    const resp = await fetch('/api/run-pipeline', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await resp.json();
+    await animatePipeline(result);
+  } catch (err) {
+    document.getElementById('placeholder').innerHTML = `
+      <div class="icon">❌</div>
+      Connection error — is the server running?<br>
+      <span style="font-size:12px;color:#666;">${err.message}</span>
+    `;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '🚀 Submit Report';
+  }
+});
+</script>
+
+</body>
+</html>

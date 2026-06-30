@@ -1,0 +1,20 @@
+guardrails:
+  - id: habitability_compliance
+    description: Never delay emergency repairs beyond state-mandated timeframes
+    trigger: ticket.urgency in ["emergency", "urgent"]
+    state_deadlines:
+      CA: {heating: "24h", water: "24h", electrical: "24h", structural: "24h"}
+      NY: {heating: "24h", water: "24h", electrical: "24h", structural: "24h"}
+      TX: {heating: "reasonable", water: "reasonable", electrical: "reasonable"}
+      FL: {heating: "none", water: "24h", electrical: "24h", AC: "7d"}
+      IL: {heating: "24h", water: "24h", electrical: "24h"}
+      WA: {heating: "24h", water: "24h", electrical: "24h", hot_water: "24h"}
+      CO: {heating: "24h", water: "24h", electrical: "24h", structural: "24h"}
+      AZ: {heating: "reasonable", water: "reasonable", electrical: "reasonable"}
+      GA: {heating: "reasonable", water: "reasonable", electrical: "reasonable"}
+      NC: {heating: "reasonable", water: "reasonable", electrical: "reasonable"}
+    actions:
+      - calculate deadline based on state + issue type
+      - if time_elapsed > deadline * 0.75: escalate to property manager
+      - if time_elapsed > deadline: escalate to owner + legal team
+      - log all compliance events for audit trail

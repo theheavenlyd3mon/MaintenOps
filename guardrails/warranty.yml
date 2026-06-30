@@ -1,0 +1,17 @@
+guardrails:
+  - id: warranty_claims
+    description: Only file valid warranty claims
+    trigger: agent_action == "file_warranty_claim"
+    pre_check:
+      - verify appliance.warranty_active == true
+      - verify appliance.warranty_expiry > current_date
+      - verify repair.issue_type in appliance.warranty_coverage
+      - verify property.purchase_date or appliance.install_date is within warranty period
+      - verify appliance.warranty_provider is not null
+    on_failure:
+      - log skipped claim with reason
+      - do not file claim
+    post_check:
+      - verify claim_confirmation received
+      - update ticket with claim_reference
+      - notify owner of claim filing
