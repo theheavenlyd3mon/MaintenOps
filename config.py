@@ -2,7 +2,23 @@
 
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
+
+# Load .env before reading any env vars
+_env_paths = [
+    Path(__file__).parent / ".env",
+    Path.home() / ".hermes" / "profiles" / "maintenops" / ".env",
+]
+for _ep in _env_paths:
+    if _ep.exists():
+        with open(_ep) as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith('#') and '=' in _line:
+                    _key, _val = _line.split('=', 1)
+                    os.environ.setdefault(_key.strip(), _val.strip())
+        break
 
 import stripe
 from openai import OpenAI
@@ -14,7 +30,7 @@ class Settings:
     # NVIDIA Nemotron
     nvidia_api_key: str = field(default_factory=lambda: os.environ.get("NVIDIA_API_KEY", ""))
     nemotron_base_url: str = "https://integrate.api.nvidia.com/v1"
-    nemotron_model: str = "nvidia/nemotron-3-ultra"
+    nemotron_model: str = "nvidia/nemotron-3-ultra-550b-a55b"
 
     # Stripe
     stripe_secret_key: str = field(default_factory=lambda: os.environ.get("STRIPE_SECRET_KEY") or os.environ.get("STRIPE_API_KEY", ""))
@@ -42,15 +58,9 @@ class Settings:
         return bool(self.nvidia_api_key and self.stripe_secret_key and self.twilio_account_sid)
 
 
-_settings: Optional[Settings] = None
-
-
 def get_settings() -> Settings:
-    """Lazy-load settings singleton."""
-    global _settings
-    if _settings is None:
-        _settings = Settings()
-    return _settings
+    """Settings — always reads fresh from environment."""
+    return Settings()
 
 
 def get_nemotron_client() -> OpenAI:

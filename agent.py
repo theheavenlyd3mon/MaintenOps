@@ -13,6 +13,7 @@ End-to-end property maintenance pipeline:
   8. Dispatch vendor → notify tenant
   9. Work complete simulation
  10. Stripe payment (vendor payout + 3% commission)
+
  11. Warranty check → claim generation
 
 Usage:
@@ -28,6 +29,21 @@ import os
 import sys
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
+
+# Load .env from project root or profile
+try:
+    from dotenv import load_dotenv
+    _env_paths = [
+        Path(__file__).parent / ".env",
+        Path.home() / ".hermes" / "profiles" / "maintenops" / ".env",
+    ]
+    for _ep in _env_paths:
+        if _ep.exists():
+            load_dotenv(_ep)
+            break
+except ImportError:
+    pass
 
 logging.basicConfig(
     level=logging.INFO,
