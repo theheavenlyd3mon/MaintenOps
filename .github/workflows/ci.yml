@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  install_and_test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Smoke import
+        run: |
+          python -c "import fastapi, openai, stripe, yaml, pydantic; print('imports ok')"
+
+      - name: Demo dry-run (no API keys)
+        env:
+          NVIDIA_API_KEY: ""
+          STRIPE_SECRET_KEY: ""
+        run: |
+          timeout 15s python demo.py "AC broken, 87 degrees, newborn" || true

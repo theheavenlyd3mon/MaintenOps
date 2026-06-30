@@ -9,18 +9,20 @@ An autonomous Hermes agent that handles property maintenance end-to-end: tenant 
 ## Quick Start
 
 ```bash
-cd ~/maintenops
-source .venv/bin/activate
+git clone https://github.com/theheavenlyd3mon/MaintenOps.git
+cd MaintenOps
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 
-# CLI — raw pipeline output
-python3 agent.py "AC not cooling, 87 degrees, newborn"
-
-# Interactive demo — timed stage-by-stage reveal
+# Demo — timed 10-phase CLI reveal
 python3 demo.py "AC not cooling, 87 degrees, newborn"
 
 # Web UI — tenant submission form + animated pipeline
 python3 main.py
 # Open http://localhost:8000
+
+# Single-pipeline run
+python3 agent.py "AC not cooling, 87 degrees, newborn in apartment"
 ```
 
 ---
@@ -200,9 +202,8 @@ DATABASE_URL=postgresql://...
 
 ## Submission Notes
 
-- **100% runnable from local machine** — no live API keys needed for demo
-- All external services (Nemotron, Stripe, Twilio) have graceful fallbacks
-- Demo runs in ~0.5s end-to-end
+**Canonical submission:** `demo/SUBMISSION.md`  
+**Executive summary:** `demo/500_WORD_SUBMISSION.md` (1,300 chars)
 - Pipeline designed for 90-second demo recording
 - Guardrails demonstrate NVIDIA safety compliance
 - Stripe Connect 3% commission shows revenue model
