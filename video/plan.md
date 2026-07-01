@@ -3,7 +3,7 @@
 ## Overview
 - **Topic**: Autonomous property maintenance agent using Nemotron AI + Stripe Connect + NemoClaw Guardrails
 - **Hook**: "Property managers lose 30% of their day to maintenance calls. What if an agent handled it all?"
-- **Aha moment**: Agent goes from tenant SMS → vendor dispatch → payment → warranty claim in 0.5 seconds
+- **Aha moment**: Agent goes from tenant SMS → vendor dispatch → payment → warranty claim in under 2 minutes
 - **Target audience**: Hackathon judges (NVIDIA, Stripe, Nous Research), property tech investors
 - **Length**: 90 seconds
 - **Resolution**: 1080p (production) — this is a submission video
@@ -150,7 +150,7 @@
 - 10 phase indicators filling in rapid-fire:
   - ✅ Triage → ✅ Compliance → ✅ Vendors → ✅ Quotes → ✅ Guardrails
   - ✅ Dispatch → ✅ Work → ✅ Payment → ✅ Warranty → ✅ Complete
-- Bottom stats: "0.5 seconds | $25.50 earned | 1 warranty claim"
+- Bottom stats: "under 2 min | $25.50 earned | 1 warranty claim"
 - MaintenOps logo + "AI-Native Property Maintenance"
 
 ### Animation sequence
@@ -161,7 +161,7 @@
 5. "Built with NVIDIA Nemotron · Stripe Connect · Hermes Agent" (~2s)
 
 ### ElevenLabs narration
-"One report. 10 phases. 0.5 seconds. $850 repair handled, $25.50 commission earned, warranty claim filed automatically. MaintenOps — AI-native property maintenance, built with NVIDIA Nemotron, Stripe Connect, and Hermes Agent."
+"One report. 10 phases. Under 2 minutes. $850 repair handled, $25.50 commission earned, warranty claim filed automatically. MaintenOps — AI-native property maintenance, built with NVIDIA Nemotron, Stripe Connect, and Hermes Agent."
 
 ---
 

@@ -6,6 +6,7 @@ Nemotron 3 Ultra, falling back to hardcoded demo data and rating-based
 sorting when upstream services are unavailable.
 """
 
+import asyncio
 import json
 import logging
 
@@ -183,8 +184,9 @@ async def match_vendors(trade: str, zip_code: str, urgency: str = "routine") -> 
     """
     # ── Step 1 & 2: get vendor candidates ────────────────────────────────
     candidates = await _query_db_vendors(trade, zip_code)
+    db_unavailable = candidates is None
 
-    if candidates is None:
+    if db_unavailable:
         # DB unreachable → use hardcoded fallback
         candidates = [v for v in DEMO_VENDORS if v["trade"] == trade]
         logger.info(
@@ -200,11 +202,19 @@ async def match_vendors(trade: str, zip_code: str, urgency: str = "routine") -> 
     enriched = [_enrich_vendor(v, zip_code) for v in candidates]
 
     # ── Step 3: AI ranking via Nemotron ──────────────────────────────────
-    try:
-        ranked = await nemotron_rank_vendors(trade, zip_code, urgency, enriched)
-    except Exception as exc:
-        logger.warning("Nemotron ranking failed: %s — falling back to rating sort", exc)
-        ranked = None
+    ranked = None
+    if not db_unavailable:
+        # Only attempt live ranking when we have real DB-backed candidates;
+        # in demo fallback mode, the hardcoded rating sort is already good enough.
+        try:
+            ranked = await asyncio.wait_for(
+                nemotron_rank_vendors(trade, zip_code, urgency, enriched),
+                timeout=8.0,
+            )
+        except asyncio.TimeoutError:
+            logger.warning("Nemotron ranking timed out — falling back to rating sort")
+        except Exception as exc:
+            logger.warning("Nemotron ranking failed: %s — falling back to rating sort", exc)
 
     # ── Step 4 (fallback) / normalise output ─────────────────────────────
     if ranked is not None and isinstance(ranked, list):

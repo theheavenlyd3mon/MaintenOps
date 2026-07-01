@@ -110,7 +110,7 @@ class Scene1_TheProblem(VoiceoverScene):
             for i, (txt, col) in enumerate(issues):
                 t = issue_tile(txt, col, pos=LEFT * 4 + DOWN * (start_y - i * 0.7))
                 tiles.add(t)
-                self.play(Write(t, run_time=0.3), run_time=0.3)
+                self.play(FadeIn(t), run_time=0.3)
                 self.wait(0.15)
 
             self.wait(0.3)
@@ -154,7 +154,7 @@ class Scene2_TenantReports(VoiceoverScene):
                 fill_color="#1A1A2E", fill_opacity=0.9,
                 stroke_color=MUTED, stroke_width=1
             )
-            phone_frame.move_to(LEFT * 3.5)
+            phone_frame.move_to(LEFT * 3)
 
             # SMS bubbles
             sms_tenant = RoundedRectangle(
@@ -170,7 +170,7 @@ class Scene2_TenantReports(VoiceoverScene):
 
             self.play(FadeIn(phone_frame, shift=LEFT), run_time=0.5)
             self.play(Write(phone_title), run_time=0.3)
-            self.play(Write(sms_tenant), Write(sms_label), run_time=0.8)
+            self.play(Create(sms_tenant), Write(sms_label), run_time=0.8)
             self.wait(0.3)
 
             # -- Web form mock (right) --
@@ -179,7 +179,7 @@ class Scene2_TenantReports(VoiceoverScene):
                 fill_color="#1A1A2E", fill_opacity=0.9,
                 stroke_color=MUTED, stroke_width=1
             )
-            form_frame.move_to(RIGHT * 3 + UP * 0.3)
+            form_frame.move_to(RIGHT * 3.5 + UP * 0.3)
 
             form_title_text = Text("Report Issue", font_size=20, font=MONO, color=PRIMARY, weight=BOLD)
             form_title_text.move_to(form_frame.get_center() + UP * 1.7)
@@ -396,7 +396,7 @@ class Scene4_VendorMatching(VoiceoverScene):
             check_items = VGroup()
             for i, check in enumerate(checks):
                 c = guardrail_check(check, SECONDARY)
-                c.move_to(RIGHT * 4 + UP * (1.5 - i * 0.5))
+                c.move_to(RIGHT * 5.2 + UP * (1.5 - i * 0.5))
                 check_items.add(c)
                 self.play(Write(c), run_time=0.3)
                 self.wait(0.1)
@@ -526,7 +526,7 @@ class Scene6_TheResult(VoiceoverScene):
     def construct(self):
         self.set_speech_service(make_service())
 
-        with self.voiceover(text="One report. 10 phases. 0.5 seconds. 850 dollars repair handled, 25 dollars 50 commission earned, warranty claim filed automatically. MaintenOps — AI-native property maintenance, built with NVIDIA Nemotron, Stripe Connect, and Hermes Agent.") as tracker:
+        with self.voiceover(text="One report. 10 phases. Under 2 minutes. 850 dollars repair handled, 25 dollars 50 commission earned, warranty claim filed automatically. MaintenOps — AI-native property maintenance, built with NVIDIA Nemotron, Stripe Connect, and Hermes Agent.") as tracker:
             # -- Summary card --
             card = RoundedRectangle(
                 width=7, height=5, corner_radius=0.15,
@@ -580,7 +580,7 @@ class Scene6_TheResult(VoiceoverScene):
 
             # -- Stats at bottom --
             stats_line = Text(
-                "0.5 seconds  |  $25.50 earned  |  1 warranty claim",
+                "under 2 min  |  $25.50 earned  |  1 warranty claim",
                 font_size=LABEL_SIZE, font=MONO, color=SECONDARY
             )
             stats_line.next_to(card, DOWN, buff=0.3)

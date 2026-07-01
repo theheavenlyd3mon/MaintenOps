@@ -271,6 +271,8 @@ async def compare_quotes(quotes: list[dict], zip_code: str = "94102") -> dict:
     try:
         if _nemotron_available:
             result = await _nemotron_compare(quotes, zip_code)
+            if result is None:
+                raise RuntimeError("Nemotron returned None (parse failure or timeout)")
             logger.info("Nemotron quote comparison succeeded")
             return result
         raise RuntimeError("Nemotron client not available")

@@ -9,7 +9,7 @@
 
 ## One-Line Pitch
 
-An autonomous property maintenance agent that takes a tenant SMS → Nemotron triage → vendor matching → quote comparison → NemoClaw guardrails → Stripe payment → warranty claim — all in 0.5 seconds.
+An autonomous property maintenance agent that takes a tenant SMS → Nemotron triage → vendor matching → quote comparison → NemoClaw guardrails → Stripe payment → warranty claim — all 10 phases run in under 2 minutes.
 
 ---
 

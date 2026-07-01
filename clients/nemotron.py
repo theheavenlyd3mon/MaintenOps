@@ -50,23 +50,39 @@ For each quote, assess:
 Return recommendation with justification."""
 
 
-async def run_triage(tenant_report: str, state: str = "CA") -> dict:
+async def run_triage(tenant_report: str, state: str = "CA") -> dict | None:
     """Run Nemotron 3 Ultra maintenance triage on a tenant report."""
     client = get_nemotron_client()
     prompt = TRIAGE_SYSTEM_PROMPT.format(state=state)
 
-    response = client.chat.completions.create(
-        model=get_settings().nemotron_model,
-        messages=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": tenant_report},
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.1,
-        max_tokens=1000,
-    )
+    try:
+        response = client.chat.completions.create(
+            model=get_settings().nemotron_model,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": tenant_report},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.1,
+            max_tokens=1000,
+            timeout=30.0,
+        )
+    except Exception:
+        return None
+
+    raw = response.choices[0].message.content
+    if not raw:
+        return None
+
     import json
-    result = json.loads(response.choices[0].message.content)
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+
+    if not isinstance(result, dict):
+        return None
+
     return result
 
 
@@ -79,23 +95,42 @@ async def match_vendors(trade: str, zip_code: str, urgency: str, vendors: list[d
         for v in vendors
     )
 
-    response = client.chat.completions.create(
-        model=get_settings().nemotron_model,
-        messages=[
-            {"role": "system", "content": VENDOR_MATCH_SYSTEM_PROMPT},
-            {"role": "user", "content": f"Trade needed: {trade}\nZIP: {zip_code}\nUrgency: {urgency}\n\nAvailable vendors:\n{vendor_list}"},
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.1,
-        max_tokens=1500,
-    )
+    try:
+        response = client.chat.completions.create(
+            model=get_settings().nemotron_model,
+            messages=[
+                {"role": "system", "content": VENDOR_MATCH_SYSTEM_PROMPT},
+                {"role": "user", "content": f"Trade needed: {trade}\nZIP: {zip_code}\nUrgency: {urgency}\n\nAvailable vendors:\n{vendor_list}"},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.1,
+            max_tokens=1500,
+            timeout=30.0,
+        )
+    except Exception:
+        return []
+
+    raw = response.choices[0].message.content
+    if not raw:
+        return []
+
     import json
-    result = json.loads(response.choices[0].message.content)
-    return result.get("matches", [])
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError:
+        return []
+
+    matches = result.get("matches", []) if isinstance(result, dict) else []
+    return matches
 
 
-async def compare_quotes(quotes: list[dict], zip_code: str) -> dict:
-    """Compare vendor quotes against market benchmarks using Nemotron."""
+async def compare_quotes(quotes: list[dict], zip_code: str) -> dict | None:
+    """Compare vendor quotes against market benchmarks using Nemotron.
+
+    Returns a dict with keys ``recommendation``, ``analysis``, ``summary`` on
+    success, or ``None`` if the API returns a response that cannot be parsed
+    or does not conform to the expected structure.
+    """
     client = get_nemotron_client()
 
     quotes_text = "\n".join(
@@ -103,16 +138,40 @@ async def compare_quotes(quotes: list[dict], zip_code: str) -> dict:
         for q in quotes
     )
 
-    response = client.chat.completions.create(
-        model=get_settings().nemotron_model,
-        messages=[
-            {"role": "system", "content": QUOTE_COMPARISON_SYSTEM_PROMPT},
-            {"role": "user", "content": f"ZIP Code: {zip_code}\n\nQuotes to compare:\n{quotes_text}"},
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.1,
-        max_tokens=1500,
-    )
+    try:
+        response = client.chat.completions.create(
+            model=get_settings().nemotron_model,
+            messages=[
+                {"role": "system", "content": QUOTE_COMPARISON_SYSTEM_PROMPT},
+                {"role": "user", "content": f"ZIP Code: {zip_code}\n\nQuotes to compare:\n{quotes_text}"},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.1,
+            max_tokens=1500,
+            timeout=30.0,
+        )
+    except Exception:
+        return None
+
+    raw = response.choices[0].message.content
+    if not raw:
+        return None
+
     import json
-    result = json.loads(response.choices[0].message.content)
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+
+    # The API sometimes returns valid JSON that is not a dict (e.g. a bare
+    # string like ``"I recommend CoolTech"``) or a dict whose ``recommendation``
+    # field is a string instead of a sub-dict.  Reject anything that won't
+    # satisfy the caller's expectations.
+    if not isinstance(result, dict):
+        return None
+
+    rec = result.get("recommendation")
+    if not isinstance(rec, dict):
+        return None
+
     return result

@@ -102,7 +102,7 @@ If the live demo breaks:
 
 | Topic | What to Say |
 |-------|-------------|
-| Nemotron | "Fast inference — triage, vendor ranking, and quote comparison all complete in under a second" |
+| Nemotron | "NVIDIA NIM Cloud inference — triage, vendor ranking, and quote comparison complete in seconds" |
 | NemoClaw | "6 guardrails prevent real disasters — unlicensed vendors, spending overruns, missed deadlines" |
 | Stripe | "Connect platform with 3% commission. Real money moves on stage." |
 | Why it matters | "$120B property maintenance market. Property managers are drowning in calls." |

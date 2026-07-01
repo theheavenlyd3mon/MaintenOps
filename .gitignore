@@ -18,7 +18,7 @@ video/partial_movie_files/
 video/media/
 video/*.wav
 video/.env
-
+video/*.mp4
 # IDE
 .idea/
 .vscode/

@@ -3,18 +3,16 @@
 MaintenOps Agent — Main Orchestrator
 
 End-to-end property maintenance pipeline:
-  1. Receive tenant report → create ticket
-  2. Triage (Nemotron → classify urgency/trade)
-  3. Habitability check (deadline lookup)
-  4. Vendor matching (Nemotron → rank top 3)
-  5. Quote simulation (3 demo responses)
-  6. Quote comparison (Nemotron → benchmark)
-  7. NemoClaw guardrails (vendor verify, spending limits)
-  8. Dispatch vendor → notify tenant
-  9. Work complete simulation
- 10. Stripe payment (vendor payout + 3% commission)
-
- 11. Warranty check → claim generation
+  1. Triage (Nemotron → classify urgency/trade)
+  2. Habitability check (deadline lookup)
+  3. Vendor matching (Nemotron → rank top 3)
+  4. Quote simulation (3 demo responses)
+  5. Quote comparison (Nemotron → benchmark)
+  6. NemoClaw guardrails (vendor verify, spending limits)
+  7. Dispatch vendor → notify tenant
+  8. Work complete simulation
+  9. Stripe payment (vendor payout + 3% commission)
+ 10. Warranty check → claim generation
 
 Usage:
     python3 agent.py "AC not cooling, 87 degrees, have a newborn"
@@ -32,10 +30,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # Load .env from project root or profile
+# ---------------------------------------------------------------------------
+# Ensure project root is importable regardless of how the file is launched
+# ---------------------------------------------------------------------------
+_ROOT = Path(__file__).resolve().parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 try:
     from dotenv import load_dotenv
+
     _env_paths = [
-        Path(__file__).parent / ".env",
+        _ROOT / ".env",
         Path.home() / ".hermes" / "profiles" / "maintenops" / ".env",
     ]
     for _ep in _env_paths:
@@ -271,11 +277,33 @@ async def phase_compare_quotes(quotes: list[dict], zip_code: str) -> dict:
             "summary": f"Selected cheapest: {cheapest['vendor_name']} at ${cheapest['quote_amount']:.2f}",
         }
 
-    result = await compare_quotes(quotes, zip_code)
-    logger.info("Recommendation: %s at $%.2f",
-                result["recommendation"]["vendor_name"],
-                result["recommendation"]["quote_amount"])
-    logger.info("Summary: %s", result["summary"])
+    raw_result = await compare_quotes(quotes, zip_code)
+    if not isinstance(raw_result, dict):
+        logger.warning("Quote comparison returned non-dict result (%s) — using cheapest fallback", type(raw_result).__name__)
+        raw_result = {}
+
+    rec = raw_result.get("recommendation") if isinstance(raw_result, dict) else None
+    if not isinstance(rec, dict):
+        logger.warning(
+            "Quote comparison returned no valid recommendation (got %s) — using cheapest fallback",
+            type(rec).__name__ if rec is not None else "None",
+        )
+        cheapest = min(quotes, key=lambda q: q["quote_amount"])
+        rec = {
+            "vendor_name": cheapest["vendor_name"],
+            "quote_amount": cheapest["quote_amount"],
+            "reason": "Cheapest quote selected (fallback — comparison engine returned no recommendation)",
+        }
+        result = {
+            "recommendation": rec,
+            "analysis": [],
+            "summary": f"Selected cheapest: {cheapest['vendor_name']} at ${cheapest['quote_amount']:.2f}",
+        }
+    else:
+        result = raw_result
+
+    logger.info("Recommendation: %s at $%.2f", rec["vendor_name"], rec["quote_amount"])
+    logger.info("Summary: %s", result.get("summary", ""))
     return result
 
 
@@ -566,12 +594,17 @@ async def run_pipeline(tenant_report: str, state: str = "CA", zip_code: str = "9
         triage_result = await phase_triage(tenant_report, state)
         pipeline["phases"]["triage"] = triage_result
 
-        issue_type = (
-            triage_result.get("trade_needed", "").replace(" Technician", "")
-            .replace(" Specialist", "").replace(" / ", "/").split("/")[0].strip()
+        raw_trade = triage_result.get("trade_needed", "")
+        if isinstance(raw_trade, list):
+            raw_trade = ", ".join(str(x) for x in raw_trade)
+        trade_clean = (
+            raw_trade.replace(" Technician", "").replace(" Specialist", "").replace(" / ", "/").split("/")[0].strip()
         )
-        if issue_type not in ("HVAC", "Plumbing", "Electrical", "Structural", "Pest"):
-            issue_type = "HVAC"  # sensible default for demo
+        trade_lower = trade_clean.lower()
+        if any(k in trade_lower for k in ("plumber", "appliance repair", "gas certified", "gas utility")):
+            issue_type = "Plumbing"
+        else:
+            issue_type = trade_clean if trade_clean in {"HVAC","Plumbing","Electrical","Structural","Pest"} else "HVAC"
 
         # ── Phase 2: Habitability ────────────────────────────────────
         compliance_result = await phase_habitability(
